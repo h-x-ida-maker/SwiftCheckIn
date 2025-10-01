@@ -62,7 +62,7 @@ function ImportedEventCard({ event }: { event: EventDetails }) {
 
 
 export default function ImportPage() {
-  const initialState = { message: null, event: null };
+  const initialState: { message: string | null; event: EventDetails | null } = { message: null, event: null };
   const [state, dispatch] = useActionState(importEventFromUrl, initialState);
 
   return (
@@ -76,7 +76,7 @@ export default function ImportPage() {
                     Import Event from JSON
                     </CardTitle>
                     <CardDescription>
-                    Provide a direct link to a JSON file with event details. The existing event and check-in data will be replaced.
+                    Provide a direct URL to a JSON file. The existing event and check-in data will be replaced.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -88,7 +88,8 @@ export default function ImportPage() {
                         type="url"
                         placeholder="https://example.com/event.json"
                         required
-                        key={state?.event?.id} // Reset input on successful import
+                        // Use a key to force re-render and clear the input on successful import
+                        key={state?.event?.id || 'initial'}
                     />
                     </div>
                     {state?.message && !state.event && (
@@ -100,7 +101,7 @@ export default function ImportPage() {
                 </CardFooter>
                 </form>
             </Card>
-            {state.event && <ImportedEventCard event={state.event} />}
+            {state?.event && <ImportedEventCard event={state.event} />}
         </div>
     </div>
   );

@@ -13,6 +13,7 @@ const ImportEventSchema = z.object({
   url: z.string().url({ message: "Please enter a valid URL." }),
 });
 
+// Updated schema to match the provided JSON structure
 const EventSchema = z.object({
     meetup: z.object({
         meetupNumber: z.string(),
@@ -62,6 +63,7 @@ export async function importEventFromUrl(prevState: ImportState, formData: FormD
       totalSeats: meetup.amountOfParticipants + meetup.amountOfAvailableSeats,
     });
     
+    // Revalidate the 'database' tag to ensure all pages get fresh data
     revalidateTag("database");
 
     return { message: "Event imported successfully!", event: newEvent };
@@ -93,8 +95,6 @@ export async function validateAndCheckIn(qrData: string) {
         const generatedHmac = crypto.createHmac('sha256', HMAC_SECRET_KEY).update(dataToVerify).digest('hex');
 
         if (generatedHmac !== receivedHmac) {
-            // Note: In a real-world scenario, avoid giving hints about why validation failed.
-            // For this demo, we are more explicit.
             return { success: false, message: "Invalid ticket. Signature mismatch." };
         }
 
