@@ -19,6 +19,7 @@ export function GenerateQrClient({ event }: { event: EventDetails }) {
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [generatedTicketNumber, setGeneratedTicketNumber] = useState<string | null>(null);
 
   const generateClientSideQrUrl = (eventNumber: string, ticketNum: string) => {
       const timestamp = Date.now().toString();
@@ -42,6 +43,7 @@ export function GenerateQrClient({ event }: { event: EventDetails }) {
     setIsLoading(true);
     setError(null);
     setQrCodeUrl(null);
+    setGeneratedTicketNumber(null);
 
     if (!ticketNumber) {
       setError("Please enter a ticket number.");
@@ -52,6 +54,7 @@ export function GenerateQrClient({ event }: { event: EventDetails }) {
     try {
         const url = generateClientSideQrUrl(event.id.toString(), ticketNumber);
         setQrCodeUrl(url);
+        setGeneratedTicketNumber(ticketNumber);
     } catch (err: any) {
       setError(err.message || "Failed to generate QR code link.");
     } finally {
@@ -100,12 +103,12 @@ export function GenerateQrClient({ event }: { event: EventDetails }) {
             </Button>
           </CardFooter>
         </form>
-        {qrCodeUrl && (
+        {qrCodeUrl && generatedTicketNumber && (
           <CardContent>
             <div className="mt-4 p-4 bg-accent/20 rounded-lg text-center">
                 <h3 className="font-semibold text-lg">QR Code Ready!</h3>
                 <p className="text-muted-foreground text-sm mt-1 mb-4">
-                    Your QR code has been generated successfully.
+                    QR code for ticket #{generatedTicketNumber} has been generated successfully.
                 </p>
                 <Button asChild>
                     <Link href={qrCodeUrl} target="_blank" rel="noopener noreferrer">
