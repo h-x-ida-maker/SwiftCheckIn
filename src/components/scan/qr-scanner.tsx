@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useRef } from "react";
@@ -17,17 +18,19 @@ export function QrScanner() {
   const { toast } = useToast();
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [isScanning, setIsScanning] = useState(true);
-  // Use a ref to hold the scanner instance
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
 
   useEffect(() => {
     if (isScanning) {
       setScanResult(null);
 
-      const onScanSuccess = async (decodedText: string, decodedResult: any) => {
-        // Stop the scanner
+      const onScanSuccess = async (decodedText: string) => {
         if (scannerRef.current) {
-          await scannerRef.current.clear();
+          try {
+            await scannerRef.current.clear();
+          } catch (error) {
+            console.error("Failed to clear scanner on success.", error);
+          }
           scannerRef.current = null;
         }
         setIsScanning(false);
@@ -66,7 +69,6 @@ export function QrScanner() {
             checkInTime: new Date().toISOString(),
         });
         
-        // Dispatch a storage event to notify other tabs/windows
         window.dispatchEvent(new Event("storage"));
         
         const message = `Ticket #${ticketNumber} checked in successfully!`;
@@ -75,10 +77,15 @@ export function QrScanner() {
       };
 
       const onScanFailure = (error: any) => {
-        // This callback is required but we can ignore errors.
+        // Ignore scan failure
       };
 
-      // Initialize the scanner
+      const readerElement = document.getElementById("qr-reader");
+      if(readerElement) {
+        // Explicitly clear the container
+        readerElement.innerHTML = '';
+      }
+      
       const scanner = new Html5QrcodeScanner(
         "qr-reader",
         { fps: 10, qrbox: { width: 250, height: 250 } },
@@ -89,7 +96,6 @@ export function QrScanner() {
     }
 
     return () => {
-      // Cleanup function to stop scanner when component unmounts or isScanning becomes false
       if (scannerRef.current) {
         scannerRef.current.clear().catch(err => console.error("Failed to clear scanner on cleanup", err));
         scannerRef.current = null;
@@ -99,7 +105,7 @@ export function QrScanner() {
 
   return (
     <div className="w-full max-w-md mx-auto">
-        {isScanning && <div id="qr-reader" className="w-full rounded-lg overflow-hidden border"></div>}
+        <div id="qr-reader" className="w-full rounded-lg overflow-hidden border"></div>
 
         {scanResult && (
             <div className={`mt-4 p-4 rounded-lg flex flex-col items-center text-center ${scanResult.success ? 'bg-accent text-accent-foreground' : 'bg-destructive text-destructive-foreground'}`}>
