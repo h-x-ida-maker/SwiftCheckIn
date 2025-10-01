@@ -49,14 +49,14 @@ export async function importEventFromUrl(prevState: any, formData: FormData) {
     }
 
     const { meetup } = parsedEvent.data;
-    const eventToSet = {
-        number: parseInt(meetup.meetupNumber, 10),
-        details: meetup.title,
-        date: meetup.startDate,
-        seats: meetup.amountOfParticipants + meetup.amountOfAvailableSeats,
-    };
+    
+    await setEvent({
+      id: parseInt(meetup.meetupNumber, 10),
+      name: meetup.title,
+      date: meetup.startDate,
+      totalSeats: meetup.amountOfParticipants + meetup.amountOfAvailableSeats,
+    });
 
-    await setEvent(eventToSet);
   } catch (error) {
     console.error(error);
     return { message: "An error occurred while importing the event." };

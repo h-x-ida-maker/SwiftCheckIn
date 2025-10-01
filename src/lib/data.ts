@@ -38,21 +38,11 @@ export const addCheckIn = async (checkIn: Omit<CheckIn, "id">): Promise<CheckIn>
   return newCheckIn;
 };
 
-export const setEvent = async (eventData: any): Promise<EventDetails | null> => {
-  // Basic validation
-  if (eventData && typeof eventData.number === 'number' && typeof eventData.details === 'string' && typeof eventData.date === 'string' && typeof eventData.seats === 'number') {
-    const newEvent: EventDetails = {
-      id: eventData.number,
-      name: eventData.details,
-      date: eventData.date,
-      totalSeats: eventData.seats,
-    };
-    db.event = newEvent;
+export const setEvent = async (eventData: EventDetails): Promise<EventDetails> => {
+    db.event = eventData;
     // Reset checkins when a new event is imported
     db.checkIns = []; 
-    return newEvent;
-  }
-  return null;
+    return db.event;
 };
 
 export const isTicketCheckedIn = async (eventId: number, ticketNumber: number): Promise<boolean> => {
