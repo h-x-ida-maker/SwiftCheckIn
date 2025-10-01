@@ -9,17 +9,8 @@ interface Db {
 }
 
 const db: Db = {
-  event: {
-    id: 1,
-    name: "Tech Conference 2024",
-    date: "2024-10-26T09:00:00Z",
-    totalSeats: 500,
-  },
-  checkIns: [
-    { id: 1, eventId: 1, ticketNumber: 101, userName: "Alice Johnson", checkInTime: new Date(Date.now() - 1000 * 60 * 5).toISOString() },
-    { id: 2, eventId: 1, ticketNumber: 204, userName: "Bob Williams", checkInTime: new Date(Date.now() - 1000 * 60 * 3).toISOString() },
-    { id: 3, eventId: 1, ticketNumber: 152, userName: "Charlie Brown", checkInTime: new Date(Date.now() - 1000 * 60 * 1).toISOString() },
-  ],
+  event: null,
+  checkIns: [],
 };
 
 // Functions to interact with the in-memory store
