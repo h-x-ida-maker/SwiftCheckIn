@@ -11,6 +11,7 @@ import { format } from "date-fns";
 import Link from "next/link";
 import { z } from "zod";
 import { setEvent } from "@/lib/data";
+import { fetchEventData } from "@/lib/actions";
 
 const EventSchema = z.object({
   meetup: z.object({
@@ -88,11 +89,14 @@ export default function ImportPage() {
     }
 
     try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error("Failed to fetch data from the URL.");
+      // Use the server action to fetch data
+      const result = await fetchEventData(url);
+      
+      if (!result.success) {
+        throw new Error(result.message || "Failed to fetch data from the URL.");
       }
-      const data = await response.json();
+      
+      const data = result.data;
 
       const parsedEvent = EventSchema.safeParse(data);
       if (!parsedEvent.success) {
