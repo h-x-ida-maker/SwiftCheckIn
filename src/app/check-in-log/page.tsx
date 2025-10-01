@@ -64,7 +64,7 @@ export default async function CheckInLogPage() {
               <TableRow>
                 <TableCell colSpan={4} className="h-24 text-center">
                   No check-ins yet.
-                TableCell>
+                </TableCell>
               </TableRow>
             )}
           </TableBody>
