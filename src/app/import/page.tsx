@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Upload, Ticket, Calendar, Users, CheckCircle } from "lucide-react";
+import { Upload, Ticket, Calendar, Users, CheckCircle, LayoutDashboard } from "lucide-react";
 import type { EventDetails } from "@/lib/types";
 import { format } from "date-fns";
+import Link from "next/link";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -56,6 +57,14 @@ function ImportedEventCard({ event }: { event: EventDetails }) {
                     </div>
                 </div>
             </CardContent>
+            <CardFooter>
+                <Button asChild className="w-full">
+                    <Link href="/">
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        Go to Dashboard
+                    </Link>
+                </Button>
+            </CardFooter>
         </Card>
     );
 }
