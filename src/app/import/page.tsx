@@ -1,6 +1,8 @@
+
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { importEventFromUrl } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +21,7 @@ function SubmitButton() {
 
 export default function ImportPage() {
   const initialState = { message: null };
-  const [state, dispatch] = useFormState(importEventFromUrl, initialState);
+  const [state, dispatch] = useActionState(importEventFromUrl, initialState);
 
   return (
     <div className="flex justify-center items-start pt-10">
