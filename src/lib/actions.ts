@@ -64,6 +64,7 @@ export async function importEventFromUrl(prevState: ImportState, formData: FormD
     
     revalidatePath("/");
     revalidatePath("/check-in-log");
+    revalidatePath("/generate-qr");
 
     return { message: "Event imported successfully!", event: newEvent };
 
