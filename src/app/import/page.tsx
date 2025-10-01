@@ -134,7 +134,7 @@ export default function ImportPage() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                     <Upload className="w-6 h-6" />
-                    Import Event from JSON
+                    Import Event from URL
                     </CardTitle>
                     <CardDescription>
                     Provide a direct URL to a JSON file. The existing event and check-in data will be replaced.
