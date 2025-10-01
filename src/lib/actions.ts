@@ -15,10 +15,13 @@ const ImportEventSchema = z.object({
 });
 
 const EventSchema = z.object({
-  number: z.number(),
-  details: z.string(),
-  date: z.string(),
-  seats: z.number(),
+    meetup: z.object({
+        meetupNumber: z.string(),
+        title: z.string(),
+        startDate: z.string(),
+        amountOfParticipants: z.number(),
+        amountOfAvailableSeats: z.number(),
+    })
 });
 
 export async function importEventFromUrl(prevState: any, formData: FormData) {
@@ -45,7 +48,15 @@ export async function importEventFromUrl(prevState: any, formData: FormData) {
         return { message: "The JSON data does not match the required format." };
     }
 
-    await setEvent(parsedEvent.data);
+    const { meetup } = parsedEvent.data;
+    const eventToSet = {
+        number: parseInt(meetup.meetupNumber, 10),
+        details: meetup.title,
+        date: meetup.startDate,
+        seats: meetup.amountOfParticipants + meetup.amountOfAvailableSeats,
+    };
+
+    await setEvent(eventToSet);
   } catch (error) {
     console.error(error);
     return { message: "An error occurred while importing the event." };

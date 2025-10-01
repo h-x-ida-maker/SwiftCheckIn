@@ -31,7 +31,7 @@ export default function ImportPage() {
               Import Event from JSON
             </CardTitle>
             <CardDescription>
-              Provide a direct link to a JSON file with event details. The file should contain keys: "number", "details", "date", and "seats".
+              Provide a direct link to a JSON file with event details.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
