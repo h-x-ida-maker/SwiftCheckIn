@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -142,7 +143,7 @@ export default function ImportPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
-                    <Label htmlFor="url">JSON URL</Label>
+                    <Label htmlFor="url">Event URL</Label>
                     <Input
                         id="url"
                         name="url"
