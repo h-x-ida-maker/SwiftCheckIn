@@ -5,12 +5,13 @@ import { getEvent, getCheckIns } from "@/lib/data";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Ticket, Users, Calendar, BarChart } from "lucide-react";
+import { Ticket, Users, Calendar, BarChart, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 import type { CheckIn, EventDetails } from "@/lib/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useIsClient } from "@/hooks/use-is-client";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 function RecentCheckIns({ checkIns }: { checkIns: CheckIn[] }) {
     return (
@@ -92,9 +93,20 @@ export default function DashboardPage() {
 
   const checkInCount = checkIns.length;
   const seatsRemaining = event.totalSeats - checkInCount;
+  const isOverCapacity = checkInCount > event.totalSeats;
 
   return (
     <div className="space-y-6">
+      {isOverCapacity && (
+        <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Warning: Event Over Capacity</AlertTitle>
+            <AlertDescription>
+                The number of checked-in attendees ({checkInCount}) has exceeded the total available seats ({event.totalSeats}).
+            </AlertDescription>
+        </Alert>
+      )}
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Event Name"
@@ -119,6 +131,7 @@ export default function DashboardPage() {
           value={`${checkInCount} / ${event.totalSeats}`}
           icon={BarChart}
           description={`${seatsRemaining.toLocaleString()} seats remaining`}
+          isWarning={isOverCapacity}
         />
       </div>
       <RecentCheckIns checkIns={checkIns} />
