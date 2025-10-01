@@ -3,7 +3,7 @@
 
 import { z } from "zod";
 import { setEvent, addCheckIn, getEvent, isTicketCheckedIn } from "@/lib/data";
-import { revalidatePath } from "next/cache";
+import { revalidateTag } from "next/cache";
 import type { EventDetails } from "./types";
 import crypto from "crypto";
 
@@ -62,9 +62,7 @@ export async function importEventFromUrl(prevState: ImportState, formData: FormD
       totalSeats: meetup.amountOfParticipants + meetup.amountOfAvailableSeats,
     });
     
-    revalidatePath("/");
-    revalidatePath("/check-in-log");
-    revalidatePath("/generate-qr");
+    revalidateTag("database");
 
     return { message: "Event imported successfully!", event: newEvent };
 
@@ -120,8 +118,7 @@ export async function validateAndCheckIn(qrData: string) {
             checkInTime: new Date().toISOString(),
         });
 
-        revalidatePath('/');
-        revalidatePath('/check-in-log');
+        revalidateTag('database');
         return { success: true, message: `Ticket #${ticketNumberNum} checked in successfully!` };
 
     } catch (error) {

@@ -7,13 +7,14 @@ import type { EventDetails, CheckIn } from "./types";
 
 const getDb = cache(
   async () => {
+    console.log("Initializing DB cache");
     return {
       event: null as EventDetails | null,
       checkIns: [] as CheckIn[],
     };
   },
   ["swiftcheck-db"],
-  { tags: ["event", "checkIns"] }
+  { tags: ["database"] }
 );
 
 
