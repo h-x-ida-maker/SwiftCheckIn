@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { getEvent, getCheckIns } from "@/lib/data";
 import {
   Table,
@@ -12,10 +15,33 @@ import { format } from "date-fns";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Ticket } from "lucide-react";
+import type { CheckIn, EventDetails } from "@/lib/types";
+import { useIsClient } from "@/hooks/use-is-client";
 
-export default async function CheckInLogPage() {
-  const event = await getEvent();
-  const checkIns = await getCheckIns();
+export default function CheckInLogPage() {
+  const [event, setEvent] = useState<EventDetails | null>(null);
+  const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
+  const isClient = useIsClient();
+
+  useEffect(() => {
+    if (isClient) {
+      const loadData = () => {
+        setEvent(getEvent());
+        setCheckIns(getCheckIns());
+      }
+      loadData();
+
+      // Listen for storage changes to update the UI
+      window.addEventListener('storage', loadData);
+      return () => {
+        window.removeEventListener('storage', loadData);
+      }
+    }
+  }, [isClient]);
+
+  if (!isClient) {
+    return null; // Or a loading indicator
+  }
 
   if (!event) {
     return (

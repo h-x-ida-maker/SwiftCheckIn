@@ -1,9 +1,6 @@
-
 "use client";
 
-import { useActionState } from "react";
-import { useFormStatus } from "react-dom";
-import { importEventFromUrl } from "@/lib/actions";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,15 +9,18 @@ import { Upload, Ticket, Calendar, Users, CheckCircle, LayoutDashboard } from "l
 import type { EventDetails } from "@/lib/types";
 import { format } from "date-fns";
 import Link from "next/link";
+import { z } from "zod";
+import { setEvent } from "@/lib/data";
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending} className="w-full">
-      {pending ? "Importing..." : "Import Event"}
-    </Button>
-  );
-}
+const EventSchema = z.object({
+  meetup: z.object({
+    meetupNumber: z.string(),
+    title: z.string(),
+    startDate: z.string().datetime(),
+    amountOfParticipants: z.number(),
+    amountOfAvailableSeats: z.number(),
+  })
+});
 
 function ImportedEventCard({ event }: { event: EventDetails }) {
     return (
@@ -69,16 +69,64 @@ function ImportedEventCard({ event }: { event: EventDetails }) {
     );
 }
 
-
 export default function ImportPage() {
-  const initialState: { message: string | null; event: EventDetails | null } = { message: null, event: null };
-  const [state, dispatch] = useActionState(importEventFromUrl, initialState);
+  const [url, setUrl] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [importedEvent, setImportedEvent] = useState<EventDetails | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+    setImportedEvent(null);
+
+    if (!url) {
+      setError("Please enter a URL.");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error("Failed to fetch data from the URL.");
+      }
+      const data = await response.json();
+
+      const parsedEvent = EventSchema.safeParse(data);
+      if (!parsedEvent.success) {
+        console.error("JSON data format error:", parsedEvent.error);
+        throw new Error("The JSON data does not match the required format.");
+      }
+
+      const { meetup } = parsedEvent.data;
+      
+      const newEvent = setEvent({
+        id: parseInt(meetup.meetupNumber, 10),
+        name: meetup.title,
+        date: meetup.startDate,
+        totalSeats: meetup.amountOfParticipants + meetup.amountOfAvailableSeats,
+      });
+
+      // Dispatch a storage event to notify other tabs/windows
+      window.dispatchEvent(new Event("storage"));
+      
+      setImportedEvent(newEvent);
+      setUrl(""); // Clear input on success
+
+    } catch (error: any) {
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="flex justify-center items-start pt-10">
         <div className="w-full max-w-md">
             <Card>
-                <form action={dispatch}>
+                <form onSubmit={handleSubmit}>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                     <Upload className="w-6 h-6" />
@@ -97,20 +145,22 @@ export default function ImportPage() {
                         type="url"
                         placeholder="https://example.com/event.json"
                         required
-                        // Use a key to force re-render and clear the input on successful import
-                        key={state?.event?.id || 'initial'}
+                        value={url}
+                        onChange={(e) => setUrl(e.target.value)}
                     />
                     </div>
-                    {state?.message && !state.event && (
-                    <p className="text-sm text-destructive">{state.message}</p>
+                    {error && (
+                        <p className="text-sm text-destructive">{error}</p>
                     )}
                 </CardContent>
                 <CardFooter>
-                    <SubmitButton />
+                    <Button type="submit" disabled={isLoading} className="w-full">
+                        {isLoading ? "Importing..." : "Import Event"}
+                    </Button>
                 </CardFooter>
                 </form>
             </Card>
-            {state?.event && <ImportedEventCard event={state.event} />}
+            {importedEvent && <ImportedEventCard event={importedEvent} />}
         </div>
     </div>
   );

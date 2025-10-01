@@ -1,63 +1,72 @@
-
-import { unstable_cache as cache } from "next/cache";
 import type { EventDetails, CheckIn } from "./types";
 
-// In a real application, you would use a database.
-// For this demo, we'll use a cached object to simulate a persistent store.
-// The key is to revalidate the cache tag whenever data changes.
+const EVENT_KEY = "swiftcheck_event";
+const CHECKINS_KEY = "swiftcheck_checkins";
 
-const DB_TAG = "database";
+// --- Helper Functions ---
 
-const getDb = cache(
-  async () => {
-    console.log("Initializing or re-fetching DB cache");
-    // The object returned by cache() is memoized. To simulate mutations,
-    // we need to rely on revalidateTag to have this function re-run.
-    // However, for a shared mutable state in a demo, a simple global
-    // can be more illustrative of the problem space, but cache is Next.js idiomatic.
-    // Let's create a structure that can be "mutated" and re-cached.
-    if ((global as any)._db === undefined) {
-      console.log("Creating new in-memory DB");
-      (global as any)._db = {
-        event: null as EventDetails | null,
-        checkIns: [] as CheckIn[],
-      };
-    }
-    return (global as any)._db;
-  },
-  ["swiftcheck-db"],
-  { tags: [DB_TAG] }
-);
+function isClientSide(): boolean {
+  return typeof window !== "undefined";
+}
 
+function getFromStorage<T>(key: string, defaultValue: T): T {
+  if (!isClientSide()) {
+    return defaultValue;
+  }
+  try {
+    const item = window.localStorage.getItem(key);
+    return item ? JSON.parse(item) : defaultValue;
+  } catch (error) {
+    console.error(`Error reading from localStorage key “${key}”:`, error);
+    return defaultValue;
+  }
+}
 
-export const getEvent = async (): Promise<EventDetails | null> => {
-  const db = await getDb();
-  return db.event;
+function setInStorage<T>(key: string, value: T): void {
+  if (!isClientSide()) {
+    return;
+  }
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.error(`Error writing to localStorage key “${key}”:`, error);
+  }
+}
+
+// --- Data Access Functions ---
+
+export const getEvent = (): EventDetails | null => {
+  return getFromStorage<EventDetails | null>(EVENT_KEY, null);
 };
 
-export const getCheckIns = async (): Promise<CheckIn[]> => {
-  const db = await getDb();
-  // Return a sorted copy to avoid mutating the cached object directly
-  return [...db.checkIns].sort((a, b) => new Date(b.checkInTime).getTime() - new Date(a.checkInTime).getTime());
+export const getCheckIns = (): CheckIn[] => {
+  const checkIns = getFromStorage<CheckIn[]>(CHECKINS_KEY, []);
+  // Return a sorted copy
+  return checkIns.sort((a, b) => new Date(b.checkInTime).getTime() - new Date(a.checkInTime).getTime());
 };
 
-export const addCheckIn = async (checkIn: Omit<CheckIn, "id">): Promise<CheckIn> => {
-  const db = await getDb();
-  const newId = db.checkIns.length > 0 ? Math.max(...db.checkIns.map(c => c.id)) + 1 : 1;
+export const addCheckIn = (checkIn: Omit<CheckIn, "id">): CheckIn => {
+  const checkIns = getCheckIns();
+  const newId = checkIns.length > 0 ? Math.max(...checkIns.map(c => c.id)) + 1 : 1;
   const newCheckIn = { ...checkIn, id: newId };
-  db.checkIns.push(newCheckIn);
+  setInStorage(CHECKINS_KEY, [...checkIns, newCheckIn]);
   return newCheckIn;
 };
 
-export const setEvent = async (eventData: EventDetails): Promise<EventDetails> => {
-    const db = await getDb();
-    db.event = eventData;
-    // Reset checkins when a new event is imported
-    db.checkIns = []; 
-    return db.event;
+export const setEvent = (eventData: EventDetails): EventDetails => {
+  setInStorage(EVENT_KEY, eventData);
+  // Reset check-ins when a new event is set
+  setInStorage(CHECKINS_KEY, []);
+  return eventData;
 };
 
-export const isTicketCheckedIn = async (eventId: number, ticketNumber: number): Promise<boolean> => {
-    const db = await getDb();
-    return db.checkIns.some(c => c.eventId === eventId && c.ticketNumber === ticketNumber);
+export const isTicketCheckedIn = (eventId: number, ticketNumber: number): boolean => {
+  const checkIns = getCheckIns();
+  return checkIns.some(c => c.eventId === eventId && c.ticketNumber === ticketNumber);
+};
+
+export const clearData = (): void => {
+    if (!isClientSide()) return;
+    window.localStorage.removeItem(EVENT_KEY);
+    window.localStorage.removeItem(CHECKINS_KEY);
 }

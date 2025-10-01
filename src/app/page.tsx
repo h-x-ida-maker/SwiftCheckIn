@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { getEvent, getCheckIns } from "@/lib/data";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { Button } from "@/components/ui/button";
@@ -5,8 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Ticket, Users, Calendar, BarChart } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
-import type { CheckIn } from "@/lib/types";
+import type { CheckIn, EventDetails } from "@/lib/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useIsClient } from "@/hooks/use-is-client";
 
 function RecentCheckIns({ checkIns }: { checkIns: CheckIn[] }) {
     return (
@@ -46,9 +50,30 @@ function RecentCheckIns({ checkIns }: { checkIns: CheckIn[] }) {
     );
 }
 
-export default async function DashboardPage() {
-  const event = await getEvent();
-  const checkIns = await getCheckIns();
+export default function DashboardPage() {
+  const [event, setEvent] = useState<EventDetails | null>(null);
+  const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
+  const isClient = useIsClient();
+
+  useEffect(() => {
+    if (isClient) {
+      const loadData = () => {
+        setEvent(getEvent());
+        setCheckIns(getCheckIns());
+      }
+      loadData();
+
+      // Listen for storage changes to update the UI in real-time
+      window.addEventListener('storage', loadData);
+      return () => {
+        window.removeEventListener('storage', loadData);
+      }
+    }
+  }, [isClient]);
+
+  if (!isClient) {
+    return null; // or a loading skeleton
+  }
 
   if (!event) {
     return (
