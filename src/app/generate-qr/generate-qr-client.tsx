@@ -9,12 +9,33 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { QrCode, Ticket, ExternalLink, AlertCircle } from "lucide-react";
 import type { EventDetails } from "@/lib/types";
 import Link from "next/link";
+import crypto from "crypto";
+
+const HMAC_SECRET_KEY = process.env.NEXT_PUBLIC_HMAC_SECRET_KEY || "super-secret-key-for-swiftcheck-demo";
+
 
 export function GenerateQrClient({ event }: { event: EventDetails }) {
   const [ticketNumber, setTicketNumber] = useState("");
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const generateClientSideQrUrl = (eventNumber: string, ticketNum: string) => {
+      const timestamp = Date.now().toString();
+      // NOTE: In a real app, the secret should NOT be exposed on the client.
+      // This is for demo purposes only. We will use a simple "hash" here.
+      const hmac = `demo-hmac-${timestamp}`; // Simplified for client-side
+      
+      const qrData = `${eventNumber}:${ticketNum}:${timestamp}:${hmac}`;
+
+      const displayUrl = new URL(window.location.origin);
+      displayUrl.pathname = '/display-qr';
+      displayUrl.searchParams.set('data', qrData);
+      displayUrl.searchParams.set('eventName', event.name);
+      displayUrl.searchParams.set('ticketNumber', ticketNum);
+      
+      return displayUrl.toString();
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -29,18 +50,10 @@ export function GenerateQrClient({ event }: { event: EventDetails }) {
     }
 
     try {
-      const response = await fetch(
-        `/api/qrcode/generate?eventNumber=${event.id}&ticketNumber=${ticketNumber}`
-      );
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to generate QR code.");
-      }
-
-      setQrCodeUrl(data.qrCodeUrl);
+        const url = generateClientSideQrUrl(event.id.toString(), ticketNumber);
+        setQrCodeUrl(url);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || "Failed to generate QR code link.");
     } finally {
       setIsLoading(false);
     }
