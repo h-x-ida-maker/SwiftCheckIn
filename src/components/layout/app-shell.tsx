@@ -125,8 +125,6 @@ function getHeaderTitle(pathname: string): string {
       return "Scan Ticket";
     case "/generate-qr":
       return "Generate Ticket";
-    case "/seat-availability":
-      return "Seat Availability Tool";
     default:
       if (pathname.startsWith("/display-qr")) {
         return "Your Ticket";
