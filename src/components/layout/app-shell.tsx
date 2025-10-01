@@ -24,9 +24,32 @@ import {
   SidebarInset,
 } from "@/components/ui/sidebar";
 import { Button } from "../ui/button";
+import { useEffect, useState } from "react";
+import type { EventDetails } from "@/lib/types";
+import { getEvent } from "@/lib/data";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [event, setEvent] = useState<EventDetails | null>(null);
+
+  useEffect(() => {
+    // Function to load event from storage
+    const loadEvent = () => {
+      setEvent(getEvent());
+    };
+
+    // Load the event initially
+    loadEvent();
+
+    // Listen for the custom storage event
+    window.addEventListener("storage", loadEvent);
+
+    // Cleanup listener on component unmount
+    return () => {
+      window.removeEventListener("storage", loadEvent);
+    };
+  }, []);
+
 
   return (
     <SidebarProvider>
@@ -53,18 +76,36 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                isActive={pathname === "/check-in-log"}
-                tooltip="Check-in Log"
-              >
-                <Link href="/check-in-log">
-                  <ListChecks />
-                  <span>Check-in Log</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+            
+            {event && (
+              <>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === "/check-in-log"}
+                    tooltip="Check-in Log"
+                  >
+                    <Link href="/check-in-log">
+                      <ListChecks />
+                      <span>Check-in Log</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === "/generate-qr"}
+                    tooltip="Generate Ticket"
+                  >
+                    <Link href="/generate-qr">
+                      <PlusCircle />
+                      <span>Generate Ticket</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </>
+            )}
+
             <SidebarMenuItem>
               <SidebarMenuButton
                 asChild
@@ -77,18 +118,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                isActive={pathname === "/generate-qr"}
-                tooltip="Generate Ticket"
-              >
-                <Link href="/generate-qr">
-                  <PlusCircle />
-                  <span>Generate Ticket</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+            
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter></SidebarFooter>
@@ -100,7 +130,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {getHeaderTitle(pathname)}
           </h2>
           <div className="flex-1 md:hidden"></div>
-          <Button asChild variant="outline" size="sm">
+          <Button asChild variant="outline" size="sm" disabled={!event}>
             <Link href="/scan">
               <QrCode className="mr-2 h-4 w-4" />
               Scan Ticket
