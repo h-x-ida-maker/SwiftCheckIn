@@ -130,12 +130,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {getHeaderTitle(pathname)}
           </h2>
           <div className="flex-1 md:hidden"></div>
-          <Button asChild variant="outline" size="sm" disabled={!event}>
-            <Link href="/scan">
-              <QrCode className="mr-2 h-4 w-4" />
-              Scan Ticket
-            </Link>
-          </Button>
+          {pathname === "/" && (
+            <Button asChild variant="outline" size="sm" disabled={!event}>
+              <Link href="/scan">
+                <QrCode className="mr-2 h-4 w-4" />
+                Scan Ticket
+              </Link>
+            </Button>
+          )}
         </header>
         <main className="p-4 sm:p-6 lg:p-8">{children}</main>
       </SidebarInset>
