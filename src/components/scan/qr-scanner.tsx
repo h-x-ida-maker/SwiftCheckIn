@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Html5QrcodeScanner } from "html5-qrcode";
+import { Html5QrcodeScanner, Html5Qrcode } from "html5-qrcode";
 import { validateQrCode } from "@/lib/actions";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -18,20 +18,23 @@ export function QrScanner() {
   const { toast } = useToast();
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [isScanning, setIsScanning] = useState(true);
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const readerId = "qr-reader";
+
 
   useEffect(() => {
-    if (isScanning) {
+    if (isScanning && !scannerRef.current) {
       setScanResult(null);
 
       const onScanSuccess = async (decodedText: string) => {
+        // Stop scanning after a successful scan
         if (scannerRef.current) {
-          try {
-            await scannerRef.current.clear();
-          } catch (error) {
-            console.error("Failed to clear scanner on success.", error);
-          }
-          scannerRef.current = null;
+            try {
+                await scannerRef.current.stop();
+                scannerRef.current = null;
+            } catch(e) {
+                console.error("Error stopping the scanner", e);
+            }
         }
         setIsScanning(false);
         
@@ -79,39 +82,46 @@ export function QrScanner() {
       const onScanFailure = (error: any) => {
         // Ignore scan failure
       };
-
-      const readerElement = document.getElementById("qr-reader");
-      if(readerElement) {
-        // Explicitly clear the container
-        readerElement.innerHTML = '';
-      }
       
-      const scanner = new Html5QrcodeScanner(
-        "qr-reader",
+      const qrScanner = new Html5Qrcode(readerId);
+      scannerRef.current = qrScanner;
+      qrScanner.start(
+        { facingMode: "environment" },
         { fps: 10, qrbox: { width: 250, height: 250 } },
-        false
-      );
-      scanner.render(onScanSuccess, onScanFailure);
-      scannerRef.current = scanner;
+        onScanSuccess,
+        onScanFailure
+      ).catch(err => {
+        console.error("Failed to start scanner", err);
+      })
     }
 
     return () => {
       if (scannerRef.current) {
-        scannerRef.current.clear().catch(err => console.error("Failed to clear scanner on cleanup", err));
+        scannerRef.current.stop().catch(err => console.error("Failed to stop scanner on cleanup", err));
         scannerRef.current = null;
       }
     };
   }, [isScanning, toast]);
+  
+  const handleRestart = () => {
+    // Manually clear the div
+    const readerElement = document.getElementById(readerId);
+    if (readerElement) {
+        readerElement.innerHTML = '';
+    }
+    // Set isScanning to true to re-trigger the useEffect
+    setIsScanning(true);
+  }
 
   return (
     <div className="w-full max-w-md mx-auto">
-        <div id="qr-reader" className="w-full rounded-lg overflow-hidden border"></div>
+        <div id={readerId} className="w-full rounded-lg overflow-hidden border"></div>
 
         {scanResult && (
             <div className={`mt-4 p-4 rounded-lg flex flex-col items-center text-center ${scanResult.success ? 'bg-accent text-accent-foreground' : 'bg-destructive text-destructive-foreground'}`}>
                 {scanResult.success ? <CheckCircle className="w-12 h-12 mb-2" /> : <XCircle className="w-12 h-12 mb-2" />}
                 <p className="font-bold text-lg">{scanResult.message}</p>
-                <Button onClick={() => setIsScanning(true)} variant={scanResult.success ? "default": "secondary"} className="mt-4">
+                <Button onClick={handleRestart} variant={scanResult.success ? "default": "secondary"} className="mt-4">
                     <ScanLine className="mr-2 h-4 w-4" />
                     Scan Another Ticket
                 </Button>
