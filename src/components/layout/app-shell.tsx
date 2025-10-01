@@ -10,7 +10,6 @@ import {
   Upload,
   Ticket,
   PlusCircle,
-  Armchair,
 } from "lucide-react";
 import {
   SidebarProvider,
@@ -87,18 +86,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <Link href="/generate-qr">
                   <PlusCircle />
                   <span>Generate Ticket</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                isActive={pathname === "/seat-availability"}
-                tooltip="Seat Availability"
-              >
-                <Link href="/seat-availability">
-                  <Armchair />
-                  <span>Seat Availability</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
