@@ -1,5 +1,16 @@
-import { QrScanner } from '@/components/scan/qr-scanner';
+"use client";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import dynamic from 'next/dynamic';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const QrScanner = dynamic(
+    () => import('@/components/scan/qr-scanner').then(mod => mod.QrScanner),
+    { 
+        ssr: false,
+        loading: () => <Skeleton className="w-[420px] h-[300px]" />
+    }
+);
 
 export default function ScanPage() {
   return (
