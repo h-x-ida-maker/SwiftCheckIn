@@ -4,12 +4,11 @@
 import { z } from "zod";
 import { setEvent, addCheckIn, getEvent, isTicketCheckedIn } from "@/lib/data";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import type { EventDetails } from "./types";
 import crypto from "crypto";
 
 const HMAC_SECRET_KEY = process.env.HMAC_SECRET_KEY || "super-secret-key-for-swiftcheck-demo";
 
-// Schema for event import
 const ImportEventSchema = z.object({
   url: z.string().url({ message: "Please enter a valid URL." }),
 });
@@ -18,13 +17,18 @@ const EventSchema = z.object({
     meetup: z.object({
         meetupNumber: z.string(),
         title: z.string(),
-        startDate: z.string(),
+        startDate: z.string().datetime(),
         amountOfParticipants: z.number(),
         amountOfAvailableSeats: z.number(),
     })
 });
 
-export async function importEventFromUrl(prevState: any, formData: FormData) {
+type ImportState = {
+    message: string | null;
+    event: EventDetails | null;
+}
+
+export async function importEventFromUrl(prevState: ImportState, formData: FormData): Promise<ImportState> {
   const validatedFields = ImportEventSchema.safeParse({
     url: formData.get("url"),
   });
@@ -32,39 +36,41 @@ export async function importEventFromUrl(prevState: any, formData: FormData) {
   if (!validatedFields.success) {
     return {
       message: "Invalid URL provided.",
+      event: null,
     };
   }
 
   try {
     const response = await fetch(validatedFields.data.url);
     if (!response.ok) {
-      return { message: "Failed to fetch data from the URL." };
+      return { message: "Failed to fetch data from the URL.", event: null };
     }
     const data = await response.json();
 
     const parsedEvent = EventSchema.safeParse(data);
     if (!parsedEvent.success) {
         console.error("JSON data format error:", parsedEvent.error);
-        return { message: "The JSON data does not match the required format." };
+        return { message: "The JSON data does not match the required format.", event: null };
     }
 
     const { meetup } = parsedEvent.data;
     
-    await setEvent({
+    const newEvent = await setEvent({
       id: parseInt(meetup.meetupNumber, 10),
       name: meetup.title,
       date: meetup.startDate,
       totalSeats: meetup.amountOfParticipants + meetup.amountOfAvailableSeats,
     });
+    
+    revalidatePath("/");
+    revalidatePath("/check-in-log");
+
+    return { message: "Event imported successfully!", event: newEvent };
 
   } catch (error) {
     console.error(error);
-    return { message: "An error occurred while importing the event." };
+    return { message: "An error occurred while importing the event.", event: null };
   }
-
-  revalidatePath("/");
-  revalidatePath("/check-in-log");
-  redirect("/");
 }
 
 
