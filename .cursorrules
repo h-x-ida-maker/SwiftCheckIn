@@ -1,0 +1,32 @@
+# Project Context
+This is a Next.js 15 project using React 18, TypeScript, Tailwind CSS, and Shadcn UI.
+It includes Firebase Genkit for AI features.
+
+# Tech Stack Rules
+
+## Next.js & React
+- Use **Server Components** by default. Add `"use client"` only when necessary (state, effects, event listeners).
+- Use `next/image` for images.
+- Use `next/link` for navigation.
+- Component filename convention: `kebab-case.tsx` (e.g., `feature-card.tsx`).
+- Export components as named exports or default exports (match existing consistency).
+
+## Styling (Tailwind + Shadcn)
+- Use Tailwind CSS for all styling. Avoid CSS modules or styled-components unless absolutely necessary.
+- Use `lucide-react` for icons.
+- When creating new UI elements, check `src/components/ui` for existing Shadcn components before building from scratch.
+- Use `clsx` and `tailwind-merge` (or the `cn` utility if available) for conditional classes.
+
+## TypeScript
+- Avoid `any`. Use specific types or Generics.
+- Define types in `src/lib/types.ts` or co-located if specific to a single component.
+- Use functional components with arrow functions.
+
+## Genkit & AI
+- AI-related code resides in `src/ai`.
+- Verify Genkit flows using `yarn genkit:dev`.
+
+# Behavioral Rules
+- When modifying data fetching, check `src/lib/data.ts`.
+- If adding new dependencies, use `yarn`.
+- When asked to create a new page, ensuring it is responsive and uses the existing layout structure.
