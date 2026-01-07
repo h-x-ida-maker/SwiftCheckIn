@@ -1,18 +1,16 @@
+
 "use client";
 
-import { useState, useEffect } from "react";
-import { getEvent, getCheckIns } from "@/lib/data";
 import { StatCard } from "@/components/dashboard/stat-card";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Ticket, Users, Calendar, BarChart, AlertTriangle, ListChecks } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
-import type { CheckIn, EventDetails } from "@/lib/types";
+import type { CheckIn } from "@/lib/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useIsClient } from "@/hooks/use-is-client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useCheckInData } from "@/hooks/use-check-in-data";
+import { EmptyState } from "@/components/common/empty-state";
 
 function RecentCheckIns({ checkIns }: { checkIns: CheckIn[] }) {
   return (
@@ -97,44 +95,18 @@ function RecentCheckIns({ checkIns }: { checkIns: CheckIn[] }) {
 }
 
 export default function DashboardPage() {
-  const [event, setEvent] = useState<EventDetails | null>(null);
-  const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
-  const isClient = useIsClient();
+  const { event, checkIns, isClient } = useCheckInData();
 
-  useEffect(() => {
-    if (isClient) {
-      const loadData = () => {
-        setEvent(getEvent());
-        setCheckIns(getCheckIns());
-      }
-      loadData();
-
-      // Listen for storage changes to update the UI in real-time
-      window.addEventListener('storage', loadData);
-      return () => {
-        window.removeEventListener('storage', loadData);
-      }
-    }
-  }, [isClient]);
-
-  if (!isClient) {
-    return null; // or a loading skeleton
-  }
+  if (!isClient) return null;
 
   if (!event) {
     return (
-      <div className="flex flex-col items-center justify-center h-[70vh] text-center max-w-md mx-auto">
-        <div className="p-6 rounded-3xl bg-primary/5 mb-6 ring-1 ring-primary/10">
-          <Ticket className="w-12 h-12 text-primary animate-pulse" />
-        </div>
-        <h2 className="text-3xl font-bold font-headline tracking-tight mb-2">Ready to Start?</h2>
-        <p className="text-muted-foreground leading-relaxed">
-          It looks like you haven't loaded an event yet. Import your attendee list to begin managing check-ins.
-        </p>
-        <Button asChild size="lg" className="mt-8 px-8 rounded-full shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300">
-          <Link href="/import">Import Event Now</Link>
-        </Button>
-      </div>
+      <EmptyState
+        title="Ready to Start?"
+        description="It looks like you haven't loaded an event yet. Import your attendee list to begin managing check-ins."
+        actionLabel="Import Event Now"
+        actionHref="/import"
+      />
     );
   }
 

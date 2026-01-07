@@ -6,11 +6,10 @@ import { Html5Qrcode, type Html5QrcodeCameraScanConfig } from "html5-qrcode";
 import { validateQrCode } from "@/lib/actions";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { ScanLine, XCircle, CheckCircle, VideoOff } from "lucide-react";
-import { getEvent, addCheckIn, isTicketCheckedIn } from "@/lib/data";
-import { Card, CardContent } from "@/components/ui/card";
+import { VideoOff } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { cn } from "@/lib/utils";
+import { processDecodedText } from "@/lib/scanner";
+import { ScannerResultView } from "./scanner-result-view";
 
 type ScanResult = {
     success: boolean;
@@ -19,7 +18,7 @@ type ScanResult = {
 
 export function QrScanner() {
     const { toast } = useToast();
-    const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+    const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
     const [isScanning, setIsScanning] = useState(true);
     const [cameraError, setCameraError] = useState<string | null>(null);
     const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -50,51 +49,21 @@ export function QrScanner() {
                 await scanner.start(
                     { facingMode: "environment" },
                     config,
-                    async (decodedText: string) => {
+                    async (decodedText) => {
                         if (!mounted) return;
 
-                        // Stop immediately to prevent double scans
-                        try {
-                            if (scanner.isScanning) {
-                                await scanner.stop();
-                            }
-                        } catch (e) {
-                            console.warn("Stop on success error:", e);
-                        }
+                        // Stop immediately
+                        try { await scanner.stop(); } catch (e) { console.warn(e); }
 
                         setIsScanning(false);
+                        const { success, message } = await processDecodedText(decodedText);
+                        setResult({ success, message });
 
-                        const currentEvent = getEvent();
-                        if (!currentEvent) {
-                            setScanResult({ success: false, message: "No event loaded." });
-                            return;
+                        if (success) {
+                            toast({ title: "Success!", description: message });
+                        } else {
+                            toast({ title: "Error", description: message, variant: "destructive" });
                         }
-
-                        const validationResult = await validateQrCode(decodedText, currentEvent.id);
-
-                        if (!validationResult.success || validationResult.ticketNumber === null) {
-                            setScanResult({ success: false, message: validationResult.message });
-                            toast({ title: "Error", description: validationResult.message, variant: "destructive" });
-                            return;
-                        }
-
-                        if (isTicketCheckedIn(currentEvent.id, validationResult.ticketNumber)) {
-                            const msg = `Ticket #${validationResult.ticketNumber} already checked in.`;
-                            setScanResult({ success: false, message: msg });
-                            toast({ title: "Error", description: msg, variant: "destructive" });
-                            return;
-                        }
-
-                        addCheckIn({
-                            eventId: currentEvent.id,
-                            ticketNumber: validationResult.ticketNumber,
-                            userName: `User #${validationResult.ticketNumber}`,
-                            checkInTime: new Date().toISOString(),
-                        });
-
-                        window.dispatchEvent(new Event("storage"));
-                        setScanResult({ success: true, message: `Ticket #${validationResult.ticketNumber} checked in!` });
-                        toast({ title: "Success!", description: `Ticket #${validationResult.ticketNumber} checked in!` });
                     },
                     () => { } // ignore scan errors
                 );
@@ -131,7 +100,7 @@ export function QrScanner() {
             }
         }
         scannerRef.current = null;
-        setScanResult(null);
+        setResult(null);
         setCameraError(null);
         setIsScanning(true);
     }
@@ -155,18 +124,13 @@ export function QrScanner() {
                 </Alert>
             )}
 
-            {scanResult && (
-                <div className={cn(
-                    "mt-4 p-8 rounded-3xl flex flex-col items-center text-center animate-in zoom-in-95 duration-300",
-                    scanResult.success ? "bg-green-500/10 text-green-600 ring-1 ring-green-500/20" : "bg-destructive/10 text-destructive ring-1 ring-destructive/20"
-                )}>
-                    {scanResult.success ? <CheckCircle className="w-16 h-16 mb-4" /> : <XCircle className="w-16 h-16 mb-4" />}
-                    <p className="font-bold text-lg mb-6 leading-tight text-foreground">{scanResult.message}</p>
-                    <Button onClick={handleRestart} className="rounded-2xl px-8 h-12 shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all font-bold">
-                        <ScanLine className="mr-2 h-4 w-4" />
-                        Scan Another Ticket
-                    </Button>
-                </div>
+            {result && (
+                <ScannerResultView
+                    success={result.success}
+                    message={result.message}
+                    onRestart={handleRestart}
+                    restartText="Scan Another Ticket"
+                />
             )}
         </div>
     );

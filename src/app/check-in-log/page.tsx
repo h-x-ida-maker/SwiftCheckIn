@@ -1,7 +1,7 @@
+
 "use client";
 
-import { useState, useEffect } from "react";
-import { getEvent, getCheckIns } from "@/lib/data";
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -10,61 +10,35 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { format, formatDistanceToNow } from "date-fns";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Ticket, Search, Clock, Users, ArrowLeft } from "lucide-react";
-import type { CheckIn, EventDetails } from "@/lib/types";
-import { useIsClient } from "@/hooks/use-is-client";
+import { Search, Clock, Users, ArrowLeft } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useCheckInData } from "@/hooks/use-check-in-data";
+import { EmptyState } from "@/components/common/empty-state";
 
 export default function CheckInLogPage() {
-  const [event, setEvent] = useState<EventDetails | null>(null);
-  const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
+  const { event, checkIns, isClient } = useCheckInData();
   const [searchQuery, setSearchQuery] = useState("");
-  const isClient = useIsClient();
-
-  useEffect(() => {
-    if (isClient) {
-      const loadData = () => {
-        setEvent(getEvent());
-        setCheckIns(getCheckIns());
-      }
-      loadData();
-
-      window.addEventListener('storage', loadData);
-      return () => {
-        window.removeEventListener('storage', loadData);
-      }
-    }
-  }, [isClient]);
 
   const filteredCheckIns = checkIns.filter(c =>
     c.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.ticketNumber.toString().includes(searchQuery)
   );
 
-  if (!isClient) {
-    return null;
-  }
+  if (!isClient) return null;
 
   if (!event) {
     return (
-      <div className="flex flex-col items-center justify-center h-[70vh] text-center max-w-sm mx-auto animate-in fade-in duration-700">
-        <div className="p-6 rounded-3xl bg-primary/5 mb-6 ring-1 ring-primary/10">
-          <Ticket className="w-12 h-12 text-primary animate-pulse" />
-        </div>
-        <h2 className="text-3xl font-bold font-headline tracking-tight mb-2">No Event Found</h2>
-        <p className="text-muted-foreground leading-relaxed text-sm">
-          Please import an event to view the check-in history.
-        </p>
-        <Button asChild size="lg" className="mt-8 px-8 rounded-full shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300">
-          <Link href="/import">Import Event</Link>
-        </Button>
-      </div>
+      <EmptyState
+        title="No Event Found"
+        description="Please import an event to view the check-in history."
+        actionLabel="Import Event"
+        actionHref="/import"
+      />
     );
   }
 
@@ -151,7 +125,7 @@ export default function CheckInLogPage() {
                   <div className="flex flex-col items-center justify-center space-y-3 opacity-40">
                     <Search className="w-10 h-10 mb-2" />
                     <p className="font-headline font-bold text-lg">No entries found</p>
-                    <p className="text-xs max-w-[200px] mx-auto">Try adjusting your search query or check back after next check-in.</p>
+                    <p className="text-xs max-w-[200px] mx-auto">Try adjusting your search query.</p>
                   </div>
                 </TableCell>
               </TableRow>
