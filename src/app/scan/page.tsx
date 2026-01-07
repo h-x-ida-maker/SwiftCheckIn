@@ -54,7 +54,7 @@ export default function ScanPage() {
                         <div className="mt-2 min-h-[300px] flex flex-col justify-center">
                             <TabsContent value="camera" className="mt-0 focus-visible:ring-0 animate-in zoom-in-95 duration-500">
                                 <div className="relative rounded-3xl overflow-hidden border-2 border-dashed border-primary/20 bg-muted/10 group">
-                                    <div className="absolute inset-0 bg-primary/5 group-hover:bg-transparent transition-colors duration-500" />
+                                    <div className="absolute inset-0 bg-primary/5 group-hover:bg-transparent transition-colors duration-500 pointer-events-none" />
                                     <QrScanner />
                                     <div className="absolute top-4 right-4 animate-pulse">
                                         <div className="w-3 h-3 rounded-full bg-primary" />

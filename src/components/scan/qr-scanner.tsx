@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Html5Qrcode, type Html5QrcodeCameraScanConfig, type Html5QrcodeResult, type QrCodeSuccessCallback } from "html5-qrcode";
+import { Html5Qrcode, type Html5QrcodeCameraScanConfig } from "html5-qrcode";
 import { validateQrCode } from "@/lib/actions";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { ScanLine, XCircle, CheckCircle, VideoOff } from "lucide-react";
 import { getEvent, addCheckIn, isTicketCheckedIn } from "@/lib/data";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { cn } from "@/lib/utils";
 
 type ScanResult = {
     success: boolean;
@@ -20,120 +21,114 @@ export function QrScanner() {
     const { toast } = useToast();
     const [scanResult, setScanResult] = useState<ScanResult | null>(null);
     const [isScanning, setIsScanning] = useState(true);
-    const scannerRef = useRef<Html5Qrcode | null>(null);
     const [cameraError, setCameraError] = useState<string | null>(null);
-
-    const readerId = "qr-reader";
+    const scannerRef = useRef<Html5Qrcode | null>(null);
+    const readerId = "qr-reader-v4";
 
     useEffect(() => {
-        // This effect handles the setup and teardown of the scanner
-        if (isScanning && !scannerRef.current) {
-            const qrScanner = new Html5Qrcode(readerId, {
-                verbose: false // Set to true for more detailed logs
-            });
-            scannerRef.current = qrScanner;
+        if (!isScanning) return;
 
-            const onScanSuccess: QrCodeSuccessCallback = async (decodedText: string, result: Html5QrcodeResult) => {
-                if (scannerRef.current?.isScanning) {
-                    await scannerRef.current.stop();
-                }
+        // Ensure container is empty before starting
+        const container = document.getElementById(readerId);
+        if (container) container.innerHTML = "";
 
-                // Prevent multiple scans from being processed
-                if (!isScanning) return;
+        const scanner = new Html5Qrcode(readerId);
+        let mounted = true;
 
-                // Stop scanning and update state
-                setIsScanning(false);
-
-                const currentEvent = getEvent();
-                if (!currentEvent) {
-                    setScanResult({ success: false, message: "No event loaded. Please import an event first." });
-                    return;
-                }
-
-                const validationResult = await validateQrCode(decodedText, currentEvent.id);
-
-                if (!validationResult.success || validationResult.ticketNumber === null) {
-                    setScanResult({ success: false, message: validationResult.message });
-                    toast({
-                        title: "Error",
-                        description: validationResult.message,
-                        variant: "destructive",
-                    });
-                    return;
-                }
-
-                const { ticketNumber } = validationResult;
-
-                if (isTicketCheckedIn(currentEvent.id, ticketNumber)) {
-                    const message = `Ticket #${ticketNumber} has already been checked in.`;
-                    setScanResult({ success: false, message });
-                    toast({ title: "Error", description: message, variant: "destructive" });
-                    return;
-                }
-
-                addCheckIn({
-                    eventId: currentEvent.id,
-                    ticketNumber: ticketNumber,
-                    userName: `User #${ticketNumber}`, // Placeholder user name
-                    checkInTime: new Date().toISOString(),
-                });
-
-                // Notify other components of the data change
-                window.dispatchEvent(new Event("storage"));
-
-                const message = `Ticket #${ticketNumber} checked in successfully!`;
-                setScanResult({ success: true, message });
-                toast({ title: "Success!", description: message });
-            };
-
-            const qrboxFunction = (viewfinderWidth: number, viewfinderHeight: number) => {
-                const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-                const qrboxSize = Math.floor(minEdge * 0.8);
-                return {
-                    width: qrboxSize,
-                    height: qrboxSize,
+        const startScanner = async () => {
+            try {
+                const config: Html5QrcodeCameraScanConfig = {
+                    fps: 10,
+                    qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+                        const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                        const qrboxSize = Math.floor(minEdge * 0.8);
+                        return { width: qrboxSize, height: qrboxSize };
+                    },
+                    aspectRatio: 1.0,
                 };
-            };
 
-            const config: Html5QrcodeCameraScanConfig = {
-                fps: 10,
-                qrbox: qrboxFunction,
-                aspectRatio: 1.0,
-            };
+                await scanner.start(
+                    { facingMode: "environment" },
+                    config,
+                    async (decodedText: string) => {
+                        if (!mounted) return;
 
-            qrScanner.start(
-                { facingMode: "environment" },
-                config,
-                onScanSuccess,
-                (errorMessage) => { /* Ignore scan failure */ }
-            ).catch((err) => {
-                console.error("Camera start error:", err);
-                if (err.name === 'NotAllowedError' || err.includes?.('Permission denied')) {
-                    setCameraError("Camera access denied. Please enable camera permissions in your browser settings.");
-                } else {
-                    setCameraError("Could not start camera. Please ensure it's not in use by another application.");
-                }
+                        // Stop immediately to prevent double scans
+                        try {
+                            if (scanner.isScanning) {
+                                await scanner.stop();
+                            }
+                        } catch (e) {
+                            console.warn("Stop on success error:", e);
+                        }
+
+                        setIsScanning(false);
+
+                        const currentEvent = getEvent();
+                        if (!currentEvent) {
+                            setScanResult({ success: false, message: "No event loaded." });
+                            return;
+                        }
+
+                        const validationResult = await validateQrCode(decodedText, currentEvent.id);
+
+                        if (!validationResult.success || validationResult.ticketNumber === null) {
+                            setScanResult({ success: false, message: validationResult.message });
+                            toast({ title: "Error", description: validationResult.message, variant: "destructive" });
+                            return;
+                        }
+
+                        if (isTicketCheckedIn(currentEvent.id, validationResult.ticketNumber)) {
+                            const msg = `Ticket #${validationResult.ticketNumber} already checked in.`;
+                            setScanResult({ success: false, message: msg });
+                            toast({ title: "Error", description: msg, variant: "destructive" });
+                            return;
+                        }
+
+                        addCheckIn({
+                            eventId: currentEvent.id,
+                            ticketNumber: validationResult.ticketNumber,
+                            userName: `User #${validationResult.ticketNumber}`,
+                            checkInTime: new Date().toISOString(),
+                        });
+
+                        window.dispatchEvent(new Event("storage"));
+                        setScanResult({ success: true, message: `Ticket #${validationResult.ticketNumber} checked in!` });
+                        toast({ title: "Success!", description: `Ticket #${validationResult.ticketNumber} checked in!` });
+                    },
+                    () => { } // ignore scan errors
+                );
+            } catch (err: any) {
+                if (!mounted) return;
+                console.error("Scanner start error:", err);
+                const isPermissionError = err?.name === 'NotAllowedError' || (typeof err === 'string' && err.includes('Permission denied'));
+                setCameraError(isPermissionError ? "Camera access denied. Please enable permissions." : "Could not start camera.");
                 setIsScanning(false);
-            });
+            }
+        };
 
-        }
+        // Delay slightly to ensure DOM is ready
+        const timeoutId = setTimeout(startScanner, 100);
 
-        // Cleanup function to run when the component unmounts or state changes
         return () => {
-            if (scannerRef.current) {
-                if (scannerRef.current.isScanning) {
-                    scannerRef.current.stop().catch(err => {
-                        console.warn("Scanner cleanup failed:", err);
-                    });
-                }
-                scannerRef.current = null;
+            mounted = false;
+            clearTimeout(timeoutId);
+            if (scanner.isScanning) {
+                scanner.stop().then(() => scanner.clear()).catch(() => { });
+            } else {
+                try { scanner.clear(); } catch (e) { }
             }
         };
     }, [isScanning, toast]);
 
-    const handleRestart = () => {
+    const handleRestart = async () => {
         if (scannerRef.current?.isScanning) {
-            scannerRef.current.stop().catch(console.error);
+            try {
+                await scannerRef.current.stop();
+                scannerRef.current.clear();
+            } catch (e) {
+                console.warn("Manual restart stop failed:", e);
+            }
         }
         scannerRef.current = null;
         setScanResult(null);
@@ -143,31 +138,31 @@ export function QrScanner() {
 
     return (
         <div className="w-full max-w-md mx-auto">
-            {(!scanResult && !cameraError) && (
-                <Card className="overflow-hidden">
-                    <CardContent className="p-0">
-                        <div id={readerId} className="w-full bg-muted aspect-square"></div>
-                    </CardContent>
-                </Card>
+            {isScanning && !cameraError && (
+                <div className="overflow-hidden rounded-3xl bg-muted/10">
+                    <div id={readerId} className="w-full aspect-square"></div>
+                </div>
             )}
 
             {cameraError && (
-                <Alert variant="destructive" className="mt-4">
+                <Alert variant="destructive" className="mt-4 rounded-2xl">
                     <VideoOff className="h-4 w-4" />
                     <AlertTitle>Camera Error</AlertTitle>
-                    <AlertDescription>{cameraError}</AlertDescription>
-                    <Button onClick={handleRestart} variant="secondary" className="mt-4">
-                        <ScanLine className="mr-2 h-4 w-4" />
+                    <AlertDescription className="text-sm">{cameraError}</AlertDescription>
+                    <Button onClick={handleRestart} variant="outline" className="mt-4 w-full rounded-xl">
                         Try Again
                     </Button>
                 </Alert>
             )}
 
             {scanResult && (
-                <div className={`mt-4 p-4 rounded-lg flex flex-col items-center text-center ${scanResult.success ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'}`}>
-                    {scanResult.success ? <CheckCircle className="w-12 h-12 mb-2 text-green-500" /> : <XCircle className="w-12 h-12 mb-2 text-red-500" />}
-                    <p className="font-bold text-lg">{scanResult.message}</p>
-                    <Button onClick={handleRestart} variant="default" className="mt-4 bg-gray-800 text-white hover:bg-gray-700">
+                <div className={cn(
+                    "mt-4 p-8 rounded-3xl flex flex-col items-center text-center animate-in zoom-in-95 duration-300",
+                    scanResult.success ? "bg-green-500/10 text-green-600 ring-1 ring-green-500/20" : "bg-destructive/10 text-destructive ring-1 ring-destructive/20"
+                )}>
+                    {scanResult.success ? <CheckCircle className="w-16 h-16 mb-4" /> : <XCircle className="w-16 h-16 mb-4" />}
+                    <p className="font-bold text-lg mb-6 leading-tight text-foreground">{scanResult.message}</p>
+                    <Button onClick={handleRestart} className="rounded-2xl px-8 h-12 shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all font-bold">
                         <ScanLine className="mr-2 h-4 w-4" />
                         Scan Another Ticket
                     </Button>
