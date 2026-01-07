@@ -53,11 +53,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider>
-      <Sidebar>
-        <SidebarHeader>
-          <div className="flex items-center gap-2 p-2">
-            <Ticket className="w-8 h-8 text-primary" />
-            <span className="text-xl font-bold group-data-[collapsible=icon]:hidden">
+      <Sidebar className="border-r border-border/20 bg-card/85 backdrop-blur-2xl shadow-sm">
+        <SidebarHeader className="border-b border-border/40 pb-4">
+          <div className="flex items-center gap-3 p-4">
+            <div className="p-2 rounded-xl bg-primary/10 text-primary">
+              <Ticket className="w-6 h-6" />
+            </div>
+            <span className="text-xl font-bold font-headline tracking-tight group-data-[collapsible=icon]:hidden">
               SwiftCheck
             </span>
           </div>
@@ -76,7 +78,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            
+
             {event && (
               <>
                 <SidebarMenuItem>
@@ -118,20 +120,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            
+
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter></SidebarFooter>
       </Sidebar>
-      <SidebarInset>
-        <header className="flex items-center justify-between p-4 border-b bg-card md:bg-transparent">
+      <SidebarInset className="bg-background/50">
+        <header className="sticky top-0 z-10 flex items-center justify-between p-4 border-b border-border/40 bg-background/80 backdrop-blur-md md:px-8">
           <SidebarTrigger className="md:hidden" />
-          <h2 className="text-lg font-semibold hidden md:block">
+          <h2 className="text-xl font-bold font-headline tracking-tight hidden md:block text-gradient">
             {getHeaderTitle(pathname)}
           </h2>
           <div className="flex-1 md:hidden"></div>
           {pathname === "/" && (
-            <Button asChild variant="outline" size="sm" disabled={!event}>
+            <Button asChild variant="default" size="sm" disabled={!event} className="shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300">
               <Link href="/scan">
                 <QrCode className="mr-2 h-4 w-4" />
                 Scan Ticket

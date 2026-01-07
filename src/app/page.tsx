@@ -5,50 +5,95 @@ import { getEvent, getCheckIns } from "@/lib/data";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Ticket, Users, Calendar, BarChart, AlertTriangle } from "lucide-react";
-import { format } from "date-fns";
+import { Ticket, Users, Calendar, BarChart, AlertTriangle, ListChecks } from "lucide-react";
+import { format, formatDistanceToNow } from "date-fns";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 import type { CheckIn, EventDetails } from "@/lib/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useIsClient } from "@/hooks/use-is-client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 function RecentCheckIns({ checkIns }: { checkIns: CheckIn[] }) {
-    return (
-        <Card className="col-span-1 lg:col-span-4">
-            <CardHeader>
-                <CardTitle>Recent Check-ins</CardTitle>
-                <CardDescription>The last 5 people who checked in.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>User</TableHead>
-                            <TableHead>Ticket No.</TableHead>
-                            <TableHead className="text-right">Time</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {checkIns.slice(0, 5).map((checkin) => (
-                            <TableRow key={checkin.id}>
-                                <TableCell className="font-medium">{checkin.userName}</TableCell>
-                                <TableCell>{checkin.ticketNumber}</TableCell>
-                                <TableCell className="text-right">{format(new Date(checkin.checkInTime), "p")}</TableCell>
-                            </TableRow>
-                        ))}
-                         {checkIns.length === 0 && (
+  return (
+    <Card className="col-span-1 lg:col-span-4 overflow-hidden border-border/40 soft-shadow bg-card/50 backdrop-blur-sm rounded-3xl">
+      <CardHeader className="bg-muted/10 pb-6 pt-8 px-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-2xl font-extrabold font-headline tracking-tight text-gradient">Recent Arrivals</CardTitle>
+            <CardDescription className="text-xs font-medium uppercase tracking-widest text-muted-foreground/60 mt-1">Real-time check-in stream</CardDescription>
+          </div>
+          <div className="p-3 rounded-2xl bg-primary/10 text-primary animate-pulse">
+            <Users className="w-6 h-6" />
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <Table>
+          <TableHeader className="bg-muted/5">
+            <TableRow className="hover:bg-transparent border-none">
+              <TableHead className="py-4 px-8 font-bold uppercase text-[10px] tracking-widest text-muted-foreground/50">Attendee</TableHead>
+              <TableHead className="py-4 font-bold uppercase text-[10px] tracking-widest text-muted-foreground/50">Ticket</TableHead>
+              <TableHead className="text-right py-4 px-8 font-bold uppercase text-[10px] tracking-widest text-muted-foreground/50">Verified At</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {checkIns.slice(0, 5).map((checkin, index) => (
+              <TableRow key={checkin.id} className={cn(
+                "group transition-all duration-300 hover:bg-primary/[0.02] border-border/10",
+                index === checkIns.slice(0, 5).length - 1 && "border-none"
+              )}>
+                <TableCell className="py-5 px-8">
+                  <div className="flex items-center gap-4">
+                    <div className={cn(
+                      "w-10 h-10 rounded-2xl flex items-center justify-center text-white font-bold text-sm shadow-sm ring-2 ring-background transition-transform group-hover:scale-110",
+                      index % 2 === 0 ? "bg-gradient-to-br from-primary to-indigo-600" : "bg-gradient-to-br from-emerald-400 to-teal-600"
+                    )}>
+                      {checkin.userName.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm tracking-tight">{checkin.userName}</p>
+                      <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter opacity-70">Verified Member</p>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell className="py-5">
+                  <span className="font-mono text-[10px] font-bold px-2 py-1 rounded bg-muted/30 border border-border/20">
+                    #{checkin.ticketNumber}
+                  </span>
+                </TableCell>
+                <TableCell className="text-right py-5 px-8">
+                  <div className="flex flex-col items-end">
+                    <span className="text-sm font-bold text-foreground">
+                      {format(new Date(checkin.checkInTime), "p")}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground font-medium opacity-60">
+                      {formatDistanceToNow(new Date(checkin.checkInTime), { addSuffix: true })}
+                    </span>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+            {checkIns.length === 0 && (
               <TableRow>
-                <TableCell colSpan={3} className="h-24 text-center">
-                  No check-ins yet.
+                <TableCell colSpan={3} className="h-64 text-center">
+                  <div className="flex flex-col items-center justify-center text-muted-foreground space-y-4">
+                    <div className="p-6 rounded-3xl bg-muted/10 animate-pulse">
+                      <ListChecks className="w-10 h-10 opacity-30" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-lg font-bold font-headline text-foreground/40">Waiting for Arrivals</p>
+                      <p className="text-xs opacity-60">Attendees will appear here as they check in.</p>
+                    </div>
+                  </div>
                 </TableCell>
               </TableRow>
             )}
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
-    );
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function DashboardPage() {
@@ -78,14 +123,16 @@ export default function DashboardPage() {
 
   if (!event) {
     return (
-      <div className="flex flex-col items-center justify-center h-[60vh] text-center bg-card p-8 rounded-lg border">
-        <Ticket className="w-16 h-16 mb-4 text-muted-foreground" />
-        <h2 className="text-2xl font-bold">No Event Loaded</h2>
-        <p className="text-muted-foreground mt-2">
-          Please import an event to get started.
+      <div className="flex flex-col items-center justify-center h-[70vh] text-center max-w-md mx-auto">
+        <div className="p-6 rounded-3xl bg-primary/5 mb-6 ring-1 ring-primary/10">
+          <Ticket className="w-12 h-12 text-primary animate-pulse" />
+        </div>
+        <h2 className="text-3xl font-bold font-headline tracking-tight mb-2">Ready to Start?</h2>
+        <p className="text-muted-foreground leading-relaxed">
+          It looks like you haven't loaded an event yet. Import your attendee list to begin managing check-ins.
         </p>
-        <Button asChild className="mt-6">
-          <Link href="/import">Import Event</Link>
+        <Button asChild size="lg" className="mt-8 px-8 rounded-full shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300">
+          <Link href="/import">Import Event Now</Link>
         </Button>
       </div>
     );
@@ -96,45 +143,68 @@ export default function DashboardPage() {
   const isOverCapacity = checkInCount > event.totalSeats;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-in fade-in duration-700">
       {isOverCapacity && (
-        <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Warning: Event Over Capacity</AlertTitle>
-            <AlertDescription>
-                The number of checked-in attendees ({checkInCount}) has exceeded the total available seats ({event.totalSeats}).
-            </AlertDescription>
+        <Alert variant="destructive" className="border-destructive/50 bg-destructive/5 backdrop-blur-sm">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle className="font-headline font-bold text-sm">Event Over Capacity</AlertTitle>
+          <AlertDescription className="text-xs opacity-90">
+            The number of checked-in attendees ({checkInCount}) has exceeded the total available seats ({event.totalSeats}).
+          </AlertDescription>
         </Alert>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between px-1">
+        <div>
+          <h1 className="text-3xl font-extrabold font-headline tracking-tight text-gradient leading-tight">
+            {event.name}
+          </h1>
+          <p className="text-muted-foreground mt-2 text-sm font-medium flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-primary" />
+            {format(new Date(event.date), "PPP")} at {format(new Date(event.date), "p")}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="px-4 py-2 rounded-2xl bg-primary/5 border border-primary/10 flex items-center gap-2 shadow-sm">
+            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+            <span className="text-[10px] font-bold text-primary uppercase tracking-widest">Live Dashboard</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Event Name"
-          value={event.name}
-          icon={Ticket}
-          description="The official name of the event"
-        />
-        <StatCard
-          title="Event Date"
-          value={format(new Date(event.date), "PPP")}
-          icon={Calendar}
-          description={format(new Date(event.date), "eeee, p")}
-        />
-        <StatCard
-          title="Total Seats"
+          title="Total Expected"
           value={event.totalSeats.toLocaleString()}
           icon={Users}
           description="Maximum capacity for the event"
         />
         <StatCard
           title="Checked In"
-          value={`${checkInCount} / ${event.totalSeats}`}
+          value={checkInCount.toLocaleString()}
           icon={BarChart}
-          description={`${seatsRemaining.toLocaleString()} seats remaining`}
+          description={`${((checkInCount / event.totalSeats) * 100).toFixed(1)}% of total capacity`}
+          isWarning={isOverCapacity}
+        />
+        <StatCard
+          title="Remaining"
+          value={Math.max(0, seatsRemaining).toLocaleString()}
+          icon={Ticket}
+          description={isOverCapacity ? "Over capacity" : `${seatsRemaining.toLocaleString()} seats left`}
+          isWarning={isOverCapacity}
+        />
+        <StatCard
+          title="Status"
+          value={isOverCapacity ? "Overbooked" : "Good"}
+          icon={AlertTriangle}
+          description={isOverCapacity ? "Check capacity settings" : "Ready for check-ins"}
           isWarning={isOverCapacity}
         />
       </div>
-      <RecentCheckIns checkIns={checkIns} />
+
+      <div className="grid gap-6">
+        <RecentCheckIns checkIns={checkIns} />
+      </div>
     </div>
   );
 }

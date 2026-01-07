@@ -24,46 +24,53 @@ const QrFileScanner = dynamic(
 
 export default function ScanPage() {
     return (
-        <div className="min-h-[80vh] flex items-center justify-center bg-muted/30 p-4 dark:bg-background">
+        <div className="min-h-[75vh] flex flex-col items-center justify-center p-4 animate-in fade-in duration-1000">
+            <div className="text-center mb-10 space-y-2">
+                <h1 className="text-4xl font-extrabold font-headline tracking-tighter text-gradient">Verify Ticket</h1>
+                <p className="text-muted-foreground max-w-sm mx-auto text-sm">Securely scan and check in attendees using their unique QR codes.</p>
+            </div>
+
             <Tabs defaultValue="camera" className="w-full max-w-md">
-                <Card className="border-0 shadow-2xl bg-card/80 backdrop-blur-sm overflow-hidden ring-1 ring-border/50">
-                    <div className="h-2 bg-gradient-to-r from-primary to-blue-400" />
-                    <CardHeader className="text-center pb-2">
-                        <CardTitle className="text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600">
-                            Scan Ticket
-                        </CardTitle>
-                        <CardDescription className="text-lg text-muted-foreground/80 font-medium">
-                            Choose your preferred verification method
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-6">
-                        <TabsList className="grid w-full grid-cols-2 p-1 bg-muted/50 rounded-xl mb-8">
+                <Card className="border-border/40 shadow-2xl bg-card/50 backdrop-blur-xl overflow-hidden ring-1 ring-border/50 p-1">
+                    <CardHeader className="text-center pb-6 pt-8">
+                        <TabsList className="grid w-full grid-cols-2 p-1 bg-muted/20 rounded-2xl h-14">
                             <TabsTrigger
                                 value="camera"
-                                className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300 py-2.5"
+                                className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-500 py-3"
                             >
                                 <Camera className="mr-2 h-4 w-4" />
-                                <span className="font-semibold">Camera</span>
+                                <span className="font-bold text-xs uppercase tracking-widest">Live Camera</span>
                             </TabsTrigger>
                             <TabsTrigger
                                 value="upload"
-                                className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-300 py-2.5"
+                                className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-500 py-3"
                             >
                                 <Upload className="mr-2 h-4 w-4" />
-                                <span className="font-semibold">Upload</span>
+                                <span className="font-bold text-xs uppercase tracking-widest">Image Upload</span>
                             </TabsTrigger>
                         </TabsList>
-
+                    </CardHeader>
+                    <CardContent className="p-6 pt-0">
                         <div className="mt-2 min-h-[300px] flex flex-col justify-center">
-                            <TabsContent value="camera" className="mt-0 focus-visible:ring-0">
-                                <div className="rounded-2xl overflow-hidden border-2 border-dashed border-muted-foreground/20 bg-muted/10">
+                            <TabsContent value="camera" className="mt-0 focus-visible:ring-0 animate-in zoom-in-95 duration-500">
+                                <div className="relative rounded-3xl overflow-hidden border-2 border-dashed border-primary/20 bg-muted/10 group">
+                                    <div className="absolute inset-0 bg-primary/5 group-hover:bg-transparent transition-colors duration-500" />
                                     <QrScanner />
+                                    <div className="absolute top-4 right-4 animate-pulse">
+                                        <div className="w-3 h-3 rounded-full bg-primary" />
+                                    </div>
                                 </div>
+                                <p className="text-[10px] text-center text-muted-foreground mt-6 font-medium uppercase tracking-widest px-8 leading-relaxed opacity-60">
+                                    Position the ticket's QR code within the frame to automatically check in the attendee.
+                                </p>
                             </TabsContent>
-                            <TabsContent value="upload" className="mt-0 focus-visible:ring-0">
-                                <div className="rounded-2xl overflow-hidden border-2 border-dashed border-muted-foreground/20 bg-muted/10 p-4">
+                            <TabsContent value="upload" className="mt-0 focus-visible:ring-0 animate-in zoom-in-95 duration-500">
+                                <div className="rounded-3xl overflow-hidden border-2 border-dashed border-primary/20 bg-muted/10 p-8 flex flex-col items-center justify-center min-h-[300px] hover:border-primary/40 transition-colors duration-500">
                                     <QrFileScanner />
                                 </div>
+                                <p className="text-[10px] text-center text-muted-foreground mt-6 font-medium uppercase tracking-widest px-8 leading-relaxed opacity-60">
+                                    Upload a photo or screenshot of the ticket QR code for manual verification.
+                                </p>
                             </TabsContent>
                         </div>
                     </CardContent>
