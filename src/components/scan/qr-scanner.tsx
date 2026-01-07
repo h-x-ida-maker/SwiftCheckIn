@@ -34,6 +34,10 @@ export function QrScanner() {
         scannerRef.current = qrScanner;
 
         const onScanSuccess: QrCodeSuccessCallback = async (decodedText: string, result: Html5QrcodeResult) => {
+            if (scannerRef.current?.isScanning) {
+                await scannerRef.current.stop();
+            }
+            
             // Prevent multiple scans from being processed
             if (!isScanning) return;
             
@@ -112,28 +116,17 @@ export function QrScanner() {
             setIsScanning(false);
         });
 
-    } else if (!isScanning && scannerRef.current) {
-        // Stop the scanner if it's running and we're not supposed to be scanning
-        if (scannerRef.current.isScanning) {
-            scannerRef.current.stop().then(() => {
-                scannerRef.current = null;
-            }).catch(err => {
-                // This can happen if the scanner is already stopped or in a state where it can't be stopped.
-                // We can safely ignore it in most cases.
-                console.warn("Scanner stop error (ignoring):", err);
-                scannerRef.current = null;
-            });
-        } else {
-             scannerRef.current = null;
-        }
     }
 
     // Cleanup function to run when the component unmounts
     return () => {
         if (scannerRef.current?.isScanning) {
             scannerRef.current.stop().catch(err => {
-                console.error("Scanner cleanup failed:", err);
+                // This can happen if the scanner is already stopped or in a state where it can't be stopped.
+                // We can safely ignore it in most cases.
+                console.warn("Scanner cleanup failed:", err);
             });
+            scannerRef.current = null;
         }
     };
 }, [isScanning, toast]);
@@ -146,11 +139,13 @@ export function QrScanner() {
 
   return (
     <div className="w-full max-w-md mx-auto">
-        <Card className="overflow-hidden">
-            <CardContent className="p-0">
-                <div id={readerId} className="w-full bg-muted aspect-square"></div>
-            </CardContent>
-        </Card>
+        {(!scanResult && !cameraError) && (
+            <Card className="overflow-hidden">
+                <CardContent className="p-0">
+                    <div id={readerId} className="w-full bg-muted aspect-square"></div>
+                </CardContent>
+            </Card>
+        )}
 
         {cameraError && (
             <Alert variant="destructive" className="mt-4">
